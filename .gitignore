@@ -1,0 +1,8 @@
+node_modules/
+data/
+*.log
+.env
+dist/
+.firebase/
+*-debug.log
+public/app.js

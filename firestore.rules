@@ -1,0 +1,29 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function owner(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+    function validEntry(d) {
+      return d.keys().hasAll(['kind', 'title', 'date', 'amount', 'category', 'time', 'done'])
+        && d.keys().hasOnly(['kind', 'title', 'date', 'amount', 'category', 'time', 'done'])
+        && d.kind in ['income', 'expense', 'event', 'task']
+        && d.title is string && d.title.size() > 0 && d.title.size() <= 120
+        && d.title.matches('.*[^ \\t\\n\\r].*')
+        && d.date is string && d.date.matches('[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])')
+        && d.amount is int && d.amount >= 0 && d.amount <= 100000000000
+        && d.category is string && d.category.size() <= 60
+        && d.time is string && d.done is bool
+        && ((d.kind in ['income', 'expense'] && d.amount > 0 && d.time == '' && d.done == false)
+          || (d.kind == 'event' && d.amount == 0 && d.category == '' && d.done == false && d.time.matches('([01][0-9]|2[0-3]):[0-5][0-9]'))
+          || (d.kind == 'task' && d.amount == 0 && d.category == '' && d.time == ''));
+    }
+    match /users/{uid}/entries/{entryId} {
+      allow read, delete: if owner(uid);
+      allow create: if owner(uid) && validEntry(request.resource.data) && request.resource.data.done == false;
+      allow update: if owner(uid) && resource.data.kind == 'task'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['done'])
+        && validEntry(request.resource.data);
+    }
+  }
+}

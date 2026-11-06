@@ -1,0 +1,28 @@
+{
+  "name": "vida-em-dia",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "build": "node scripts/build.js",
+    "start": "npm run build && node server.js",
+    "dev": "npm run build && node server.js",
+    "test": "node --test test/client.test.js",
+    "emulators": "npm run build:emulator && firebase emulators:start --project demo-vida-em-dia",
+    "build:emulator": "node scripts/build.js --emulator",
+    "deploy": "node scripts/deploy.js",
+    "test:firebase": "firebase emulators:exec --project demo-vida-em-dia --only auth,firestore \"node --test test/auth.test.js test/rules.test.js\"",
+    "test:auth": "firebase emulators:exec --project demo-vida-em-dia --only auth \"node --test test/auth.test.js\""
+  },
+  "dependencies": {
+    "firebase": "13.2.0"
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "6.0.0",
+    "esbuild": "0.28.2",
+    "firebase-tools": "15.35.0"
+  }
+}
