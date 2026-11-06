@@ -1,10 +1,11 @@
+import { calendarPanel, financeChart, categoryPanel, taskProgress } from './visuals.js';
 import { initializeClient, observeAccount, registerAccount, login, logout as signOutAccount, observeEntries, addEntry, removeEntry, completeTask, friendlyError } from './firebase-client.js';
 const $ = selector => document.querySelector(selector);
 const money = value => (value / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 const dateKey = (date = new Date()) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 const shortDate = value => new Date(`${value}T12:00:00`).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
 const escape = value => String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
-let entries = [], view = 'overview', month = new Date(new Date().getFullYear(), new Date().getMonth(), 1), register = false, noticeTimer, unsubscribeEntries, accountVersion = 0;
+let entries = [], view = 'overview', month = new Date(new Date().getFullYear(), new Date().getMonth(), 1), register = false, noticeTimer, unsubscribeEntries, accountVersion = 0, selectedDate = null;
 function notice(message) {
   $('#notice').textContent = message;
   $('#notice').classList.add('visible');
@@ -28,6 +29,7 @@ function showApp(account) {
   watchMonth();
 }
 function watchMonth() {
+  selectedDate = null;
   unsubscribeEntries?.();
   const version = ++accountVersion;
   entries = [];
@@ -45,10 +47,10 @@ function watchMonth() {
   });
 }
 const views = {
-  overview: ['Sua vida, em dia.', 'Um pouco de organização para aproveitar melhor o que importa.', 'Um olhar para a sua rotina'],
-  finance: ['Seu dinheiro, com clareza.', 'Acompanhe o que entra e o que sai, sem complicar.', 'Movimentações do mês'],
-  agenda: ['Tempo para o que importa.', 'Seus compromissos reunidos em um só lugar.', 'Compromissos do mês'],
-  tasks: ['Um passo de cada vez.', 'Tire os planos da cabeça e abra espaço para fazer.', 'Tarefas do mês']
+  overview: ['Seu próximo nível começa aqui.', 'Dinheiro, tempo e planos. Uma visão para conectar tudo.', 'Explore seu espaço'],
+  finance: ['Clareza para cada decisão.', 'Acompanhe seus números e entenda o movimento do seu dinheiro.', 'Inteligência financeira'],
+  agenda: ['Dê espaço aos seus planos.', 'Visualize o mês. Organize seu tempo. Faça acontecer.', 'Sua agenda, conectada'],
+  tasks: ['Transforme intenção em ação.', 'Do primeiro passo à tarefa concluída. Acompanhe sua evolução.', 'Seu fluxo de trabalho']
 };
 function item(entry) {
   const finance = ['income', 'expense'].includes(entry.kind), task = entry.kind === 'task';
@@ -74,6 +76,8 @@ function render() {
   $('#page-title').textContent = title;
   $('#page-description').textContent = description;
   $('#section-label').textContent = section;
+  $('#view-label').textContent = {overview:'Visão geral',finance:'Finanças',agenda:'Agenda',tasks:'Tarefas'}[view];
+  $('#page-kicker').textContent = {overview:'SEU CENTRO DE CONTROLE',finance:'FLUXO FINANCEIRO',agenda:'SEU TEMPO',tasks:'MODO FOCO'}[view];
   document.querySelectorAll('[data-view]').forEach(button => {
     button.classList.toggle('active', button.dataset.view === view);
     if (button.dataset.view === view) button.setAttribute('aria-current', 'page'); else button.removeAttribute('aria-current');
@@ -84,10 +88,21 @@ function render() {
   const upcoming = events.filter(entry => `${entry.date}T${entry.time}` >= `${dateKey()}T${new Date().toTimeString().slice(0, 5)}`);
   let html = '';
   if (view === 'overview') {
-    html = `<div class="quick-links"><button data-go-view="finance" class="quick-link quick-finance"><span class="quick-icon">+</span><span><strong>Seu dinheiro</strong><small>Organize receitas e despesas</small></span><span class="quick-arrow">→</span></button><button data-go-view="agenda" class="quick-link quick-agenda"><span class="quick-icon">▦</span><span><strong>Seus planos</strong><small>${upcoming.length} compromisso${upcoming.length === 1 ? '' : 's'} pela frente</small></span><span class="quick-arrow">→</span></button><button data-go-view="tasks" class="quick-link quick-tasks"><span class="quick-icon">✓</span><span><strong>Seu próximo passo</strong><small>${tasks.filter(entry => !entry.done).length} tarefa${tasks.filter(entry => !entry.done).length === 1 ? '' : 's'} para fazer</small></span><span class="quick-arrow">→</span></button></div><div class="overview-grid">${card('Na sua agenda', upcoming.slice(0, 4), 'Sua agenda tem espaço.', 'Adicione os próximos compromissos deste mês.', 'event')}${card('Seus próximos passos', tasks.filter(entry => !entry.done).slice(0, 4), 'Uma coisa a menos na cabeça.', 'Anote uma tarefa para começar.', 'task')}${card('Últimas movimentações', finances.slice(0, 5), 'Vamos começar pelo básico?', 'Registre uma receita ou despesa para acompanhar seu dinheiro.', 'expense', true)}<div class="gentle-note full-width"><b aria-hidden="true">✳</b><p><strong>Não precisa resolver tudo hoje.</strong>Escolha uma pequena tarefa e comece por ela. O resto vem com o tempo.</p></div></div>`;
-  } else if (view === 'finance') html = card('Receitas e despesas', finances, 'Seu mês começa aqui.', 'Adicione sua primeira movimentação.', 'expense');
-  else if (view === 'agenda') html = card('Seus compromissos', events, 'Espaço para novos planos.', 'Adicione um compromisso com data e horário.', 'event');
-  else html = card('Sua lista de tarefas', tasks, 'Organize seus próximos passos.', 'Adicione uma tarefa com a data em que pretende fazê-la.', 'task');
+    const pending = tasks.filter(entry => !entry.done);
+    html = `<section class="welcome-panel"><div><span class="panel-tag">SUA VIDA EM MOVIMENTO</span><h2>Menos abas abertas.<br>Mais possibilidades.</h2><p>Um espaço para tirar seus planos do papel e abrir caminho para o que vem depois.</p><button class="light-button" data-go-view="tasks">Encontre seu próximo passo <span>→</span></button></div><img src="./assets/connect.svg" alt="Conexões digitais em azul elétrico"></section>
+    <div class="visual-shortcuts">
+      <button data-go-view="finance" class="visual-shortcut money-shortcut"><div class="shortcut-image"><img src="./assets/finance.svg" alt="Anel metálico e gráfico ascendente em ciano"></div><div class="shortcut-copy"><span class="eyebrow">01 / FINANÇAS</span><h2>Seu dinheiro.<br>Uma nova perspectiva.</h2><p>Receitas, despesas e decisões mais claras.</p><span class="shortcut-link">Explorar finanças <span aria-hidden="true">→</span></span></div></button>
+      <button data-go-view="agenda" class="visual-shortcut time-shortcut"><div class="shortcut-image"><img src="./assets/agenda.svg" alt="Calendário e relógio em violeta"></div><div class="shortcut-copy"><span class="eyebrow">02 / AGENDA</span><h2>Tempo para<br>o que vem aí.</h2><p>${upcoming.length} compromisso${upcoming.length === 1 ? '' : 's'} pela frente neste mês.</p><span class="shortcut-link">Abrir calendário <span aria-hidden="true">→</span></span></div></button>
+      <button data-go-view="tasks" class="visual-shortcut focus-shortcut"><div class="shortcut-image"><img src="./assets/tasks.svg" alt="Cartões de tarefas em verde neon"></div><div class="shortcut-copy"><span class="eyebrow">03 / TAREFAS</span><h2>Pequenos passos.<br>Grandes avanços.</h2><p>${pending.length} tarefa${pending.length === 1 ? '' : 's'} esperando sua próxima ação.</p><span class="shortcut-link">Entrar em foco <span aria-hidden="true">→</span></span></div></button>
+    </div><div class="overview-grid">${card('No seu radar', upcoming.slice(0, 3), 'Novos planos cabem aqui.', 'Adicione seu próximo compromisso.', 'event')}${card('Próximas ações', pending.slice(0, 3), 'Seu próximo passo começa aqui.', 'Adicione uma tarefa para tirar do papel.', 'task')}</div>`;
+  } else if (view === 'finance') {
+    html = `<div class="finance-grid">${financeChart(current, money)}${categoryPanel(current, money)}</div>${card('Histórico de movimentações', finances, 'Seu mês começa aqui.', 'Adicione sua primeira movimentação.', 'expense')}`;
+  } else if (view === 'agenda') {
+    const filtered = selectedDate ? events.filter(event => event.date === selectedDate) : events;
+    html = `<div class="agenda-layout">${calendarPanel(month, events, selectedDate, dateKey())}<div class="agenda-side"><div class="agenda-art"><img src="./assets/agenda.svg" alt="Calendário tridimensional com relógio em violeta"><span class="eyebrow">TEMPO PARA VOCÊ</span></div>${card(selectedDate ? `Compromissos · ${shortDate(selectedDate)}` : 'Todos os compromissos', filtered, selectedDate ? 'Um dia com espaço.' : 'Seu tempo é seu.', 'Adicione um compromisso para planejar o próximo passo.', 'event')}</div></div>`;
+  } else {
+    html = `${taskProgress(tasks)}<div class="task-board">${card(`A fazer <span class="count-badge">${tasks.filter(entry => !entry.done).length}</span>`, tasks.filter(entry => !entry.done), 'Tudo em ordem por aqui.', 'Adicione uma tarefa para começar.', 'task')}${card(`Concluídas <span class="count-badge">${tasks.filter(entry => entry.done).length}</span>`, tasks.filter(entry => entry.done), 'Sua primeira conquista vem aí.', 'Conclua uma tarefa para vê-la aqui.', 'task')}</div>`;
+  }
   $('#content').innerHTML = html;
 }
 function fields() {
@@ -105,7 +120,7 @@ function openEntry(kind) {
   const form = $('#entry-form');
   form.reset();
   form.elements.kind.value = kind || ({ agenda: 'event', tasks: 'task' }[view] || 'expense');
-  form.elements.date.value = dateKey(month).slice(0, 7) === dateKey().slice(0, 7) ? dateKey() : dateKey(month);
+  form.elements.date.value = view === 'agenda' && selectedDate ? selectedDate : (dateKey(month).slice(0, 7) === dateKey().slice(0, 7) ? dateKey() : dateKey(month));
   fields();
   $('#entry-dialog').showModal();
   form.elements.title.focus();
@@ -163,6 +178,8 @@ $('#entry-form').addEventListener('submit', async event => {
   } catch (error) { notice(friendlyError(error)); } finally { button.disabled = false; }
 });
 $('#content').addEventListener('click', async event => {
+  const day = event.target.closest('[data-day]');
+  if (day) { selectedDate = day.dataset.day === 'all' ? null : day.dataset.day; render(); return; }
   const shortcut = event.target.closest('[data-go-view]');
   if (shortcut) { view = shortcut.dataset.goView; render(); return; }
   const add = event.target.closest('[data-add]');

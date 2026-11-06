@@ -33,7 +33,7 @@ npm run test:auth
 npm run test:firebase
 ```
 
-- `npm test`: valida valores em centavos, dados de entrada e mensagens de erro.
+- `npm test`: executa 9 testes de valores em centavos, dados de entrada, mensagens de erro, calendário, agrupamento semanal, categorias e progresso.
 - `npm run test:auth`: testa cadastro, login simultâneo em duas sessões e saída no emulador de Authentication.
 - `npm run test:firebase`: inclui os testes de autenticação e das regras Firestore, com bloqueio de acesso cruzado, visitantes e gravações adulteradas.
 
@@ -72,3 +72,9 @@ A configuração pública do projeto `vida-em-dia-b344f` está preenchida. Ainda
 Esta versão tem receitas/despesas por mês, categorias, saldo, compromissos, tarefas e exclusão. Ainda não tem edição (exclua e cadastre novamente), recorrência, notificações, integração bancária, recuperação de senha ou verificação de e-mail na interface. Os compromissos usam a data e o horário local informados, sem conversão de fuso.
 
 O SDK mantém a sessão neste navegador até sair; saia em aparelhos compartilhados. O cache de registros fica em memória, sem persistência offline habilitada. O cadastro por e-mail fica aberto; não há lista de convidados. Para uso público mais amplo, avalie verificação de e-mail, App Check e monitoramento de uso. As regras de isolamento continuam necessárias mesmo com essas medidas.
+
+## Interface
+
+O painel tem quatro composições próprias, tema tech escuro e imagens SVG locais. A visão geral reúne atalhos ilustrados e próximos compromissos/tarefas. Finanças mostra saldo apenas nessa aba, gráfico semanal e distribuição das despesas por categoria, calculados a partir dos registros. Agenda oferece calendário mensal com filtro por dia e usa o dia selecionado ao criar um compromisso. Tarefas separa pendentes e concluídas e calcula o progresso do mês. Não existem números fictícios em produção.
+
+O build versiona as URLs de CSS e JavaScript com o hash do conteúdo e o Hosting exige revalidação, para evitar mistura com estilos antigos.

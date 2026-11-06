@@ -10,7 +10,7 @@
     "build": "node scripts/build.js",
     "start": "npm run build && node server.js",
     "dev": "npm run build && node server.js",
-    "test": "node --test test/client.test.js",
+    "test": "node --test test/client.test.js test/visuals.test.js",
     "emulators": "npm run build:emulator && firebase emulators:start --project demo-vida-em-dia",
     "build:emulator": "node scripts/build.js --emulator",
     "deploy": "node scripts/deploy.js",
