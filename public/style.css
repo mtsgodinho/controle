@@ -3,3 +3,17 @@
 .mobile-account{display:none}@media(max-width:700px){.mobile-account{display:flex}}
 
 @media(max-width:700px){.stats{grid-template-columns:1fr 1fr}.stats article:first-child{grid-column:1/-1}.stats strong{font-size:24px;overflow-wrap:normal}.stats article:first-child strong{font-size:30px}.stats small{font-size:10px}}
+
+/* Resumo compacto, exclusivo da área de finanças. */
+.stats{gap:0;background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.stats article{min-width:0;padding:20px 24px;border:0;border-right:1px solid var(--line);border-radius:0;background:transparent}
+.stats article:first-child{background:transparent;border-color:var(--line)}
+.stats article:last-child{border-right:0}
+.stats strong{font-size:26px;margin:10px 0 6px;font-variant-numeric:tabular-nums;letter-spacing:-.6px}
+.stats #income{color:#4f8159}.stats #expense{color:#aa735a}
+@media(max-width:700px){
+  .stats article{padding:18px}
+  .stats article:first-child{border-right:0;border-bottom:1px solid var(--line)}
+  .stats article:first-child strong{font-size:28px}
+  .stats strong{font-size:22px;overflow-wrap:anywhere}
+}

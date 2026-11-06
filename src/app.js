@@ -59,6 +59,7 @@ function card(title, records, emptyTitle, emptyMessage, type, full = false) {
   return `<section class="card ${full ? 'full-width' : ''}"><div class="card-head"><h2>${title}</h2><button data-add="${type}">+ Adicionar</button></div>${records.length ? records.map(item).join('') : `<div class="empty"><strong>${emptyTitle}</strong>${emptyMessage}</div>`}</section>`;
 }
 function render() {
+  $('.stats').hidden = view !== 'finance';
   const prefix = dateKey(month).slice(0, 7);
   const current = entries.filter(entry => entry.date.startsWith(prefix));
   const income = current.filter(entry => entry.kind === 'income').reduce((sum, entry) => sum + entry.amount, 0);
