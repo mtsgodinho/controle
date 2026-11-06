@@ -1,7 +1,7 @@
 // Servidor de desenvolvimento estático. A produção usa Firebase Hosting.
 import http from 'node:http';
 import { readFile } from 'node:fs/promises';
-const files = { '/': ['index.html', 'text/html'], '/index.html': ['index.html', 'text/html'], '/app.js': ['app.js', 'text/javascript'], '/style.css': ['style.css', 'text/css'] };
+const files = { '/assets/routine.svg': ['assets/routine.svg', 'image/svg+xml'], '/': ['index.html', 'text/html'], '/index.html': ['index.html', 'text/html'], '/app.js': ['app.js', 'text/javascript'], '/style.css': ['style.css', 'text/css'] };
 const server = http.createServer(async (req, res) => {
   const file = files[new URL(req.url, 'http://localhost').pathname];
   if (!file || req.method !== 'GET') { res.writeHead(404); return res.end('Página não encontrada.'); }

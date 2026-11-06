@@ -59,6 +59,7 @@ function card(title, records, emptyTitle, emptyMessage, type, full = false) {
   return `<section class="card ${full ? 'full-width' : ''}"><div class="card-head"><h2>${title}</h2><button data-add="${type}">+ Adicionar</button></div>${records.length ? records.map(item).join('') : `<div class="empty"><strong>${emptyTitle}</strong>${emptyMessage}</div>`}</section>`;
 }
 function render() {
+  $('#app').dataset.view = view;
   $('.stats').hidden = view !== 'finance';
   const prefix = dateKey(month).slice(0, 7);
   const current = entries.filter(entry => entry.date.startsWith(prefix));
@@ -83,7 +84,7 @@ function render() {
   const upcoming = events.filter(entry => `${entry.date}T${entry.time}` >= `${dateKey()}T${new Date().toTimeString().slice(0, 5)}`);
   let html = '';
   if (view === 'overview') {
-    html = `<div class="overview-grid">${card('Na sua agenda', upcoming.slice(0, 4), 'Sua agenda tem espaço.', 'Adicione os próximos compromissos deste mês.', 'event')}${card('Seus próximos passos', tasks.filter(entry => !entry.done).slice(0, 4), 'Uma coisa a menos na cabeça.', 'Anote uma tarefa para começar.', 'task')}${card('Últimas movimentações', finances.slice(0, 5), 'Vamos começar pelo básico?', 'Registre uma receita ou despesa para acompanhar seu dinheiro.', 'expense', true)}<div class="gentle-note full-width"><b aria-hidden="true">✳</b><p><strong>Não precisa resolver tudo hoje.</strong>Escolha uma pequena tarefa e comece por ela. O resto vem com o tempo.</p></div></div>`;
+    html = `<div class="quick-links"><button data-go-view="finance" class="quick-link quick-finance"><span class="quick-icon">+</span><span><strong>Seu dinheiro</strong><small>Organize receitas e despesas</small></span><span class="quick-arrow">→</span></button><button data-go-view="agenda" class="quick-link quick-agenda"><span class="quick-icon">▦</span><span><strong>Seus planos</strong><small>${upcoming.length} compromisso${upcoming.length === 1 ? '' : 's'} pela frente</small></span><span class="quick-arrow">→</span></button><button data-go-view="tasks" class="quick-link quick-tasks"><span class="quick-icon">✓</span><span><strong>Seu próximo passo</strong><small>${tasks.filter(entry => !entry.done).length} tarefa${tasks.filter(entry => !entry.done).length === 1 ? '' : 's'} para fazer</small></span><span class="quick-arrow">→</span></button></div><div class="overview-grid">${card('Na sua agenda', upcoming.slice(0, 4), 'Sua agenda tem espaço.', 'Adicione os próximos compromissos deste mês.', 'event')}${card('Seus próximos passos', tasks.filter(entry => !entry.done).slice(0, 4), 'Uma coisa a menos na cabeça.', 'Anote uma tarefa para começar.', 'task')}${card('Últimas movimentações', finances.slice(0, 5), 'Vamos começar pelo básico?', 'Registre uma receita ou despesa para acompanhar seu dinheiro.', 'expense', true)}<div class="gentle-note full-width"><b aria-hidden="true">✳</b><p><strong>Não precisa resolver tudo hoje.</strong>Escolha uma pequena tarefa e comece por ela. O resto vem com o tempo.</p></div></div>`;
   } else if (view === 'finance') html = card('Receitas e despesas', finances, 'Seu mês começa aqui.', 'Adicione sua primeira movimentação.', 'expense');
   else if (view === 'agenda') html = card('Seus compromissos', events, 'Espaço para novos planos.', 'Adicione um compromisso com data e horário.', 'event');
   else html = card('Sua lista de tarefas', tasks, 'Organize seus próximos passos.', 'Adicione uma tarefa com a data em que pretende fazê-la.', 'task');
@@ -162,6 +163,8 @@ $('#entry-form').addEventListener('submit', async event => {
   } catch (error) { notice(friendlyError(error)); } finally { button.disabled = false; }
 });
 $('#content').addEventListener('click', async event => {
+  const shortcut = event.target.closest('[data-go-view]');
+  if (shortcut) { view = shortcut.dataset.goView; render(); return; }
   const add = event.target.closest('[data-add]');
   if (add) return openEntry(add.dataset.add);
   const remove = event.target.closest('[data-delete]');
